@@ -1,0 +1,3 @@
+{"name":"Andres","dpi":"12345678901234","datebirth":"1979-06-12","address":"456 Pine St, Santiago"}
+{"name":"Andres","dpi":"34567890123456","datebirth":"1985-02-11","address":"234 Oak Rd, Caracas"}
+{"name":"Andres","dpi":"45678901234567","datebirth":"1978-11-26","address":"789 Oak Rd, Buenos Aires"}

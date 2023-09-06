@@ -23,7 +23,7 @@ namespace LAB01_EDII
             {
                 
                 //Mostrardisplay();
-                string route = @"C:\\Users\\julio\\Downloads\\inputsprueba.csv";
+                string route = @"C:\\Users\\julio\\Downloads\\datos1.csv";
                 //@"C:\\Users\\julio\\Downloads\\LAB01-EDII\\inputs.csv";
                 if (File.Exists(route))
                 {
@@ -34,9 +34,39 @@ namespace LAB01_EDII
                         {
                             string[] fila = item.Split(';');
                             //util el ?  en esta situacion para la deserialización de datos, donde la operación podría no producir un resultado válido y, en lugar de lanzar una excepción, podria que el resultado sea null, deserializa el objeto JSON en la posición fila[1] a una instancia de la clase Persona.
-                            Persona? persona = JsonSerializer.Deserialize<Persona>(fila[1]);
+                            // Obtener el JSON a partir de la entrada del CSV
+                            string json = fila[1];
+
+                            string datebirth;
+                            if (json.Contains("\"dateBirth\":\""))
+                            {
+                                datebirth = json.Split(new string[] { "\"dateBirth\":\"" }, StringSplitOptions.None)[1].Split('\"')[0];
+                            }
+                            else
+                            {
+                                datebirth = "0000-01-01";
+                            }
+
+                            //aseguro que la deserializacion funcione agrego el campo dateBirth al JSON si no estaba presente
+                            if (!json.Contains("\"dateBirth\":\""))
+                            {
+                                //inserto el campo dateBirth justo antes del ultimo corchete
+                                json = json.Insert(json.Length - 1, $",\"dateBirth\":\"{datebirth}\"");
+                            }
+
+                            
+                            Persona persona = JsonSerializer.Deserialize<Persona>(json);
+                            persona.datebirth = datebirth;
+
+                            //procedo a dividir el nombre completo (nombre y apellido) y tomo solo el nombre
+                            string[] nombrepartes = persona?.name.Split(' ');
+                            if (nombrepartes != null && nombrepartes.Length > 0)
+                            {
+                                persona.name = nombrepartes[0];
+                            }
+
                             // //fila[0] tiene la acción (INSERT, PATCH, DELETE).
-                            //fila[1] contiene la serialización json.
+                            //fila[1] contiene la serializacion json.
                             if (fila[0] == "INSERT")
                             {
                                 countIns++;
@@ -148,8 +178,8 @@ namespace LAB01_EDII
 
                 personas.Clear();
                 //resumenOperaciones();
-                Console.WriteLine("Ingrese el nombre de la persona que quiere buscar en minusculas: ");
-                string? name = Console.ReadLine().ToLower(); //leo la entrada del usuario en minusculas y la dicha variable name de tipo nullable ya que podria ser null
+                Console.WriteLine("Ingrese el nombre de la persona que quiere buscar (preferible primera letra en mayusculas): ");
+                string? name = Console.ReadLine(); //leo la entrada del usuario y la dicha variable name de tipo nullable ya que podria ser null
 
                 Persona temporal = new Persona(); //creo un nuevo objeto de Persona y lo asigno a temporal 
 
