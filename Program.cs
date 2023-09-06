@@ -148,7 +148,7 @@ namespace LAB01_EDII
 
                 personas.Clear();
                 //resumenOperaciones();
-                Console.WriteLine("Ingrese el nombre de la persona que quiere buscar: ");
+                Console.WriteLine("Ingrese el nombre de la persona que quiere buscar en minusculas: ");
                 string? name = Console.ReadLine().ToLower(); //leo la entrada del usuario en minusculas y la dicha variable name de tipo nullable ya que podria ser null
 
                 Persona temporal = new Persona(); //creo un nuevo objeto de Persona y lo asigno a temporal 
