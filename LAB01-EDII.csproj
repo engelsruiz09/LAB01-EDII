@@ -70,6 +70,10 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Arbol\AVL.cs" />
+    <Compile Include="Arbol\Huffmannode.cs" />
+    <Compile Include="Modelo\CodificacionAritmetica.cs" />
+    <Compile Include="Modelo\CodificacionHuffman.cs" />
+    <Compile Include="Modelo\Letra.cs" />
     <Compile Include="Arbol\Nodo.cs" />
     <Compile Include="Modelo\Delegates.cs" />
     <Compile Include="Modelo\Persona.cs" />
