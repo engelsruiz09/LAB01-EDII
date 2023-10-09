@@ -233,7 +233,7 @@ namespace LAB01_EDII.Arbol
                 else
                 {
                     temporal = temporal.Left;//caso contrario el item a buscar es menor que el valor del nodo actual y se mueve hacia nodo izquierdo 
-                }
+                }   
             }
             if (temporal == null)
             {

@@ -20,7 +20,6 @@ namespace LAB01_EDII
 
         private static AVL<Persona> arbolPersonas = new AVL<Persona>();
         private static List<Persona> personas = new List<Persona>();
-        //private static CodificacionAritmetica operando = new CodificacionAritmetica();
         private static CodificacionHuffman codificadorhuffman = new CodificacionHuffman();
         public static void Main(string[] args)
         {
@@ -57,6 +56,7 @@ namespace LAB01_EDII
                             }
                         }
                     }
+
 
                     string flag;
                     do
@@ -135,6 +135,49 @@ namespace LAB01_EDII
                 rowNumber++;
             }
             Console.WriteLine("Presione cualquier tecla para regresar a menu...");
+            //  ruta del directorio de entrada y la llave para encriptar/desencriptar
+            string inputPath = @"C:\Users\julio\Downloads\LAB01-EDII\inputs3\inputs";
+            string encryptedPath = @"C:\Users\julio\Downloads\LAB01-EDII\encriptado";
+            string decryptedPath = @"C:\Users\julio\Downloads\LAB01-EDII\desencriptado";
+            string llave = "miLlaveSuperSecreta"; 
+
+            // verifico que los directorios existen
+            if (!Directory.Exists(encryptedPath))
+            {
+                Directory.CreateDirectory(encryptedPath);
+            }
+
+            if (!Directory.Exists(decryptedPath))
+            {
+                Directory.CreateDirectory(decryptedPath);
+            }
+
+            // Obtener todos los archivos en el directorio de entrada
+            string[] files = Directory.GetFiles(inputPath, "REC-*.txt");
+
+            foreach (string file in files)
+            {
+                // Leer el contenido del archivo
+                string content = File.ReadAllText(file);
+
+                // Encriptar el contenido
+                string encryptedContent = DES.encriptar(content, llave);
+
+                // Guardar el contenido encriptado en un nuevo archivo en el directorio de encriptados
+                string encryptedFileName = Path.GetFileNameWithoutExtension(file) + "-encriptado.txt";
+                string encryptedFilePath = Path.Combine(encryptedPath, encryptedFileName);
+                File.WriteAllText(encryptedFilePath, encryptedContent);
+
+                // Desencriptar el contenido
+                string decryptedContent = DES.desencriptar(encryptedContent, llave);
+
+                // Guardar el contenido desencriptado en un nuevo archivo en el directorio de desencriptados
+                string decryptedFileName = Path.GetFileNameWithoutExtension(file) + "-desencriptado.txt";
+                string decryptedFilePath = Path.Combine(decryptedPath, decryptedFileName);
+                File.WriteAllText(decryptedFilePath, decryptedContent);
+            }
+
+            Console.WriteLine("----Proceso completado!----");
         }
 
         private static void buscarregistros(AVL<Persona> arbolPersonas)
@@ -298,6 +341,9 @@ namespace LAB01_EDII
             }
             return diccionario;//devuelvo el diccionario completo con todos los caracteres y las frecuencias de estos
         }
+
+
+
 
     }
 }
