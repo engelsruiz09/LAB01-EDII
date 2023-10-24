@@ -9,6 +9,7 @@ using LAB01_EDII.Arbol;
 using System.IO.Ports;
 using System.Data;
 using System.Numerics;
+using System.Reflection;
 
 namespace LAB01_EDII
 {
@@ -21,6 +22,9 @@ namespace LAB01_EDII
         private static AVL<Persona> arbolPersonas = new AVL<Persona>();
         private static List<Persona> personas = new List<Persona>();
         private static CodificacionHuffman codificadorhuffman = new CodificacionHuffman();
+
+        public static FirmaDigital firmaGlobal = new FirmaDigital();
+
         public static void Main(string[] args)
         {
             try
@@ -52,7 +56,7 @@ namespace LAB01_EDII
                             else if (fila[0] == "PATCH")
                             {
                                 countPat++;
-                                arbolPersonas.Patch(persona!,Delegates.DpiComparison);
+                                arbolPersonas.Patch(persona!, Delegates.DpiComparison);
                             }
                         }
                     }
@@ -67,7 +71,8 @@ namespace LAB01_EDII
                         Console.WriteLine("1- Mostrar Registros completos");
                         Console.WriteLine("2- Buscar Registros");
                         Console.WriteLine("3- Buscar DPI, Codificar, Decodificar");
-                        Console.WriteLine("4- Salir");
+                        Console.WriteLine("4- Buscar DPI, Conversaciones");
+                        Console.WriteLine("5- Salir");
                         Console.WriteLine("Por favor elija una opción del sistema:");
                         flag = Console.ReadLine();
 
@@ -83,6 +88,21 @@ namespace LAB01_EDII
                                 buscarYCodificarDecodificar(arbolPersonas);
                                 break;
                             case "4":
+                                Console.Clear();
+                                Mostrardisplay();
+                                Console.WriteLine("Ingrese el DPI para buscar las conversaciones:");
+                                string dpi = Console.ReadLine();
+                                Console.WriteLine("Ingrese la llave para descifrar las conversaciones:");
+                                string llave = Console.ReadLine();//una llave de 8 bytes equivalente a 64bits por el DES 56 se usan realmente para cifrar y los 8 restantes como bits de paridad 
+
+                                // Procesar y almacenar las conversaciones (esto solo se hace una vez)
+                                ProcesoConversacion(dpi, llave);
+
+                                // Mostrar las conversaciones para el DPI dado
+                                DisplayConversacionesDPI(dpi, llave);
+
+                                break;
+                            case "5":
                                 Console.WriteLine("Saliendo...");
                                 break;
                             default:
@@ -91,7 +111,7 @@ namespace LAB01_EDII
                         }
                         Console.ReadKey();
 
-                    } while (flag != "4");
+                    } while (flag != "5");
 
                 }
             }
@@ -139,7 +159,7 @@ namespace LAB01_EDII
             string inputPath = @"C:\Users\julio\Downloads\LAB01-EDII\inputs3\inputs";
             string encryptedPath = @"C:\Users\julio\Downloads\LAB01-EDII\encriptado";
             string decryptedPath = @"C:\Users\julio\Downloads\LAB01-EDII\desencriptado";
-            string llave = "miLlaveSuperSecreta"; 
+            string llave = "miLlaveSuperSecreta";
 
             // verifico que los directorios existen
             if (!Directory.Exists(encryptedPath))
@@ -185,7 +205,7 @@ namespace LAB01_EDII
             char flag2;
             do
             {
-                Console.Clear(); 
+                Console.Clear();
                 Mostrardisplay();
                 resumenOperaciones();
 
@@ -341,6 +361,119 @@ namespace LAB01_EDII
             }
             return diccionario;//devuelvo el diccionario completo con todos los caracteres y las frecuencias de estos
         }
+
+
+        public static void ProcesoConversacion(string dpi, string llave)
+        {
+            try
+            {
+                //FirmaDigital firma = new FirmaDigital(); // Instanciación de la clase de firma
+
+                int counter = 1;
+                string filename = $"CONV-{dpi}-{counter}.txt";
+                string path = @"C:\\Users\\julio\\Downloads\\LAB01-EDII\\inputslab4\\inputs\\" + filename;
+                while (File.Exists(path))
+                {
+                    string conversation = File.ReadAllText(path);
+
+                    // Generar firma digital usando RSA
+                    byte[] signatureBytes = firmaGlobal.GenerarFirma(conversation);
+                    string signature = Convert.ToBase64String(signatureBytes);
+
+                    // Concatenar mensaje y firma
+                    string combinedMessage = $"{conversation}\nSIGNATURE:{signature}";
+
+                    // Cifrar el mensaje
+                    string encryptedMessage = DES.encriptar(combinedMessage, llave);
+
+                    // Comprimir el mensaje cifrado
+                    List<int> compressedMessage = LZW.encode(encryptedMessage);
+
+                    // Guardar la lista como bytes en un archivo binario
+                    byte[] byteArray = compressedMessage.SelectMany(BitConverter.GetBytes).ToArray();
+
+                    string outputPath = $@"C:\\Users\\julio\\Downloads\\LAB01-EDII\\inputslab4\\salidalab4\\cifrado\\CONV-{dpi}-{counter}-comprimir.txt";
+                    Console.WriteLine($"Archivo procesado con éxito y guardado en: {outputPath}");
+                    File.WriteAllBytes(outputPath, byteArray);
+
+                    counter++;
+                    filename = $"CONV-{dpi}-{counter}.txt";
+                    path = @"C:\\Users\\julio\\Downloads\\LAB01-EDII\\inputslab4\\inputs\\" + filename;
+                }
+
+                Console.WriteLine($"Proceso completado. Se procesaron {counter - 1} archivos.");
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine($"Se produjo un error: {e.Message}");
+                Console.WriteLine(e.StackTrace);
+            }
+        }
+
+        public static void DisplayConversacionesDPI(string dpi, string llave)
+        {
+            try
+            {
+                //FirmaDigital firma = new FirmaDigital(); // Instanciación de la clase de firma
+
+                int conversationCounter = 1;
+                string filename = $"CONV-{dpi}-{conversationCounter}.txt";
+                string path = $@"C:\\Users\\julio\\Downloads\\LAB01-EDII\\inputslab4\\salidalab4\\cifrado\\CONV-{dpi}-{conversationCounter}-comprimir.txt";
+
+                while (File.Exists(path))
+                {
+                    Console.WriteLine($"Leyendo y descifrando el archivo: {path}");
+
+                    byte[] byteArray = File.ReadAllBytes(path);
+                    List<int> compressedMessage = Enumerable.Range(0, byteArray.Length / sizeof(int)).Select(offset => BitConverter.ToInt32(byteArray, offset * sizeof(int))).ToList();
+
+                    // Descomprimir el mensaje
+                    string encryptedMessage = LZW.Decompress(compressedMessage);
+
+                    // Descifrar el mensaje
+                    string combinedMessage = DES.desencriptar(encryptedMessage, llave);
+
+                    // Separar el mensaje de la firma
+                    var parts = combinedMessage.Split(new string[] { "\nSIGNATURE:" }, StringSplitOptions.None);
+                    string message = parts[0];
+                    byte[] signatureBytes = Convert.FromBase64String(parts[1]);
+
+                    StringBuilder sb = new StringBuilder();
+
+                    // Validar firma con RSA
+                    if (firmaGlobal.ValidarFirma(message, signatureBytes))
+                    {
+                        Console.WriteLine("---------------------------------------------");
+                        sb.AppendLine($"Conversación {conversationCounter}:");
+                        sb.AppendLine(message);
+                        sb.AppendLine("-------------------------------------------------");
+                    }
+                    else
+                    {
+                        sb.AppendLine("La firma del mensaje es inválida o ha sido alterada.");
+                    }
+
+                    Console.WriteLine(sb.ToString());
+
+                    string outputPath = $@"C:\\Users\\julio\\Downloads\\LAB01-EDII\\inputslab4\\salidalab4\\descifrado\\CONV-{dpi}-{conversationCounter}.txt";
+                    File.WriteAllText(outputPath, sb.ToString());
+
+                    conversationCounter++;
+                    filename = $"CONV-{dpi}-{conversationCounter}.txt";
+                    path = $@"C:\\Users\\julio\\Downloads\\LAB01-EDII\\inputslab4\\salidalab4\\cifrado\\CONV-{dpi}-{conversationCounter}-comprimir.txt";
+                }
+
+                Console.WriteLine($"Proceso completado. Se desplegaron {conversationCounter - 1} conversaciones.");
+                Console.WriteLine("Presione Cualquier tecla para continuar");
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine($"Se produjo un error: {e.Message}");
+                Console.WriteLine(e.StackTrace);
+            }
+        }
+
+
 
 
 

@@ -138,7 +138,7 @@ namespace LAB01_EDII.Modelo
         // Define una funcion para encriptar un mensaje usando el algoritmo DES.
         public static Func<string, string, string> encriptar = delegate (string mensaje, string llave)
         {
-            // Si la longitud del mensaje no es un multiplo de 8, se añaden espacios hasta que lo sea.
+            // Si la longitud del mensaje no es un multiplo de 8bytes, 64 bits se añaden espacios hasta que lo sea.
             while (mensaje.Length % 8 != 0)
             {
                 mensaje = mensaje + " ";
@@ -146,6 +146,8 @@ namespace LAB01_EDII.Modelo
 
             // Utiliza un StringBuilder para construir el mensaje encriptado.
             StringBuilder msjEncriptado = new StringBuilder();
+
+            //mensaje = AddPadding(mensaje, 8);
 
             // Convierte el mensaje a su representacion en bits.
             string bits = StringToBinary(mensaje);
@@ -190,55 +192,32 @@ namespace LAB01_EDII.Modelo
         // Define un delegado para la funcion de desencriptacion.
         public static Func<string, string, string> desencriptar = delegate (string msjCifrado, string llave)
         {
-            // Asegura que la longitud del mensaje cifrado sea multiplo de 8, rellenando con espacios si es necesario.
-            while (msjCifrado.Length % 8 != 0)
+            while (msjCifrado.Length % 8 != 0)//Se llena de espacio en blanco si es necesario
             {
-                msjCifrado += " ";
+                msjCifrado = msjCifrado + " ";
             }
-
-            // Inicializa un StringBuilder para almacenar el mensaje descifrado.
             StringBuilder msjDescifrado = new StringBuilder();
             int posicion = 0;
+            string bits = StringToBinary(msjCifrado);//Se pasa a bits el mensaje
 
-            // Convierte el mensaje cifrado a formato binario.
-            string bits = StringToBinary(msjCifrado);
-
-            // Genera las llaves necesarias para el proceso de desencriptacion.
-            string[] keys = generateKeys(llave);
-
-            // Invierte el orden de las llaves para el proceso de desencriptacion.
+            string[] keys = generateKeys(llave); //Se generan las llaves
             keys = invLlaves(keys);
 
-            // Procesa cada bloque de 64 bits del mensaje cifrado.
             while (posicion < bits.Length)
             {
-                // Extrae un bloque de 64 bits.
                 string block = bits.Substring(posicion, 64);
+                string initialP = operacionesVectores(IP, block); //Permutación inicial                                
 
-                // Aplica la permutacion inicial.
-                string initialP = operacionesVectores(IP, block);
-
-                // Realiza el proceso DES sobre el bloque.
                 string procesoDES = ProcesoDES(initialP, keys);
-
-                // Separa el bloque resultante en las mitades izquierda y derecha.
                 string left = procesoDES.Substring(0, 32);
                 string right = procesoDES.Substring(32, 32);
-
-                // Realiza el intercambio final de las mitades.
                 string temp = right + left;
 
-                // Aplica la permutación final.
                 string permINV = operacionesVectores(INVP, temp);
-
-                // Convierte el bloque descifrado a formato de texto y lo añade al resultado.
                 msjDescifrado.Append(BinaryToString(permINV));
-
-                // Aumenta la posicion para procesar el siguiente bloque.
-                posicion += 64;
+                posicion = posicion + 64;
             }
 
-            // Retorna el mensaje descifrado completo.
             return msjDescifrado.ToString();
         };
 
@@ -290,62 +269,41 @@ namespace LAB01_EDII.Modelo
         // Define un metodo para desplazar una cadena de bits hacia la izquierda.
         private static string shiftLeft(string texto, int cantidad)
         {
-            // Crea un StringBuilder para construir la cadena desplazada.
+            int contador = 0;
             StringBuilder resultado = new StringBuilder();
-
-            // Convierte la cadena en un arreglo de caracteres.
             char[] caracteres = texto.ToCharArray();
-
-            // Utiliza un bucle para realizar el desplazamiento la cantidad de veces especificada.
-            for (int contador = 0; contador < cantidad; contador++)
+            while (contador < cantidad)
             {
-                // Guarda el primer carácter de la cadena.
                 char primero = caracteres[0];
-
-                // Desplaza cada caracter a la posicion anterior.
                 for (int i = 1; i < caracteres.Length; i++)
                 {
                     caracteres[i - 1] = caracteres[i];
                 }
-
-                // Coloca el primer caracter en la ultima posicion.
                 caracteres[caracteres.Length - 1] = primero;
+                contador++;
             }
 
-            // Convierte el arreglo de caracteres desplazados de nuevo a una cadena.
             foreach (var c in caracteres)
             {
                 resultado.Append(c);
             }
 
-            // Retorna la cadena desplazada.
             return resultado.ToString();
         }
 
         // Define el proceso principal de DES.
         private static string ProcesoDES(string message, string[] keys)
         {
-            // Divide el mensaje en dos mitades: izquierda y derecha.
             string left = message.Substring(0, 32);
             string right = message.Substring(32, 32);
-
-            // Realiza el proceso de DES en 16 rondas.
             for (int i = 0; i < 16; i++)
             {
-                // Guarda la mitad derecha del mensaje en una variable temporal.
                 string temp = right;
-
-                // Aplica una funcion compleja a la mitad derecha y a la llave correspondiente.
                 string resultF = funcCompleja(right, keys[i]);
-
-                // Aplica una operacion XOR entre la mitad izquierda y el resultado de la funcion compleja.
-                right = XOR(left, resultF);
-
-                // Asigna el valor de la variable temporal a la mitad izquierda.
+                string resultFXOR = XOR(left, resultF);
+                right = resultFXOR;
                 left = temp;
             }
-
-            // Retorna la combinacion de las mitades izquierda y derecha.
             return left + right;
         }
 
@@ -366,7 +324,7 @@ namespace LAB01_EDII.Modelo
         }
 
         // Define el proceso de sustitucion usando cajas SBOX.
-        private static string SBOX(string data)
+        private static string SBOX(string data)//procesa bloques de 6 bits de la cadena data
         {
             int posicion = 0;//posicion en data
             int cont = 1; // contador para saber que sbox usar 1 - 8
@@ -383,10 +341,11 @@ namespace LAB01_EDII.Modelo
                 row = Convert.ToByte(temporal[0].ToString() + temporal[5], 2);
                 col = Convert.ToByte(temporal.Substring(1, 4), 2);
 
-                // Realiza la sustitucion usando la caja SBOX correspondiente.
+                // Realiza la sustitucion usando la caja SBOX correspondiente. esta representacion puede no ser de 4 bits 
                 switch (cont)
                 {
-                    case 1: sb.Append(auxiliarFunc(Convert.ToString(S1[row, col], 2), 4)); break;
+                    //para cada bloque de 6 bits, determina que caja SBOX y encuentra un valor en esa caja usando row y col que se derivan del bloque de 6 bits 
+                    case 1: sb.Append(auxiliarFunc(Convert.ToString(S1[row, col], 2), 4)); break;//auxiliar aseegura que la representacion binaria del valor obtenido del sbox tenga logi de 4 bits si es menor se añaden 0 al inicio para alcanzar longitud
                     case 2: sb.Append(auxiliarFunc(Convert.ToString(S2[row, col], 2), 4)); break;
                     case 3: sb.Append(auxiliarFunc(Convert.ToString(S3[row, col], 2), 4)); break;
                     case 4: sb.Append(auxiliarFunc(Convert.ToString(S4[row, col], 2), 4)); break;
@@ -409,18 +368,14 @@ namespace LAB01_EDII.Modelo
         }
 
         // Define un metodo para aplicar operaciones con vectores en DES.
-        private static string operacionesVectores(int[] vector, string cadenaBits)
+        private static string operacionesVectores(int[] vector, string cadenaBits)//Función para operar con vectores
         {
-            // Crea un StringBuilder para construir el resultado.
             StringBuilder sb = new StringBuilder();
-
-            // Aplica una permutacion basada en el vector proporcionado.
             for (int i = 0; i < vector.Length; i++)
             {
-                sb.Append(cadenaBits[vector[i] - 1]);
+                char c = cadenaBits[vector[i] - 1];
+                sb.Append(c);
             }
-
-            // Retorna la cadena permutada.
             return sb.ToString();
         }
 
@@ -468,7 +423,7 @@ namespace LAB01_EDII.Modelo
                 byteList.Add(Convert.ToByte(data.Substring(i, 8), 2));
             }
 
-            // Decodifica la lista de bytes a una cadena de texto usando la codificación ISO-8859-1.
+            // Decodifica la lista de bytes a una cadena de texto usando la codificación ISO-8859-1 LATIN-1 representa el alfabeto latino.
             System.Text.Encoding iso_8859_1 = System.Text.Encoding.GetEncoding("ISO-8859-1");
             return iso_8859_1.GetString(byteList.ToArray());
         }
@@ -504,6 +459,20 @@ namespace LAB01_EDII.Modelo
             return result;
         }
 
+
+        private static string AddPadding(string message, int blockSize = 8)
+        {
+            int paddingLength = blockSize - (message.Length % blockSize);
+            char paddingChar = (char)paddingLength;
+            return message + new string(paddingChar, paddingLength);
+        }
+
+
+        private static string RemovePadding(string msjCifrado)
+        {
+            int paddingLength = (int)msjCifrado[msjCifrado.Length - 1];
+            return msjCifrado.Substring(0, msjCifrado.Length - paddingLength);
+        }
 
 
     }

@@ -71,12 +71,13 @@
   <ItemGroup>
     <Compile Include="Arbol\AVL.cs" />
     <Compile Include="Arbol\Huffmannode.cs" />
-    <Compile Include="Modelo\CodificacionAritmetica.cs" />
     <Compile Include="Modelo\CodificacionHuffman.cs" />
     <Compile Include="Modelo\DES.cs" />
+    <Compile Include="Modelo\FirmaDigital.cs" />
     <Compile Include="Modelo\Letra.cs" />
     <Compile Include="Arbol\Nodo.cs" />
     <Compile Include="Modelo\Delegates.cs" />
+    <Compile Include="Modelo\LZW.cs" />
     <Compile Include="Modelo\Persona.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
