@@ -16,6 +16,8 @@ namespace LAB01_EDII.Modelo
 
         //agregando lo nuevo que piden en practica 2
         public string[] companies { get; set; }//mi lista de compañias que tiene cada registro
+
+        public string recluiter { get; set; }
         public List<string> huffmanCodes { get; set; } //lista de codigos Huffman para cada compañía
         public List<Dictionary<char, string>> huffmanDictionaries { get; set; } //lista de diccionarios Huffman utilizados para la codificacion
 

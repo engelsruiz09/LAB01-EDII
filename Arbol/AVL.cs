@@ -321,5 +321,21 @@ namespace LAB01_EDII.Arbol
             }
             return nodoTemp;
         }
+
+        public void InOrder(Action<T> action)
+        {
+            InOrderTraversal(Root, action);
+        }
+
+        private void InOrderTraversal(Nodo<T>? nodo, Action<T> action)
+        {
+            if (nodo != null)
+            {
+                InOrderTraversal(nodo.Left, action);
+                action(nodo.Value);
+                InOrderTraversal(nodo.Right, action);
+            }
+        }
+
     }
 }

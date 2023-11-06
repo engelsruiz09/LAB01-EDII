@@ -10,6 +10,8 @@ using System.IO.Ports;
 using System.Data;
 using System.Numerics;
 using System.Reflection;
+using static LAB01_EDII.Modelo.Credenciales;
+
 
 namespace LAB01_EDII
 {
@@ -23,13 +25,30 @@ namespace LAB01_EDII
         private static List<Persona> personas = new List<Persona>();
         private static CodificacionHuffman codificadorhuffman = new CodificacionHuffman();
 
-        public static FirmaDigital firmaGlobal = new FirmaDigital();
+        public static FirmaDigital firmaGlobal;
+        private static List<Credencial> credencialesGeneradas = new List<Credencial>();
 
+        private static PublicKey publicKey; 
+        private static PrivateKey privateKey;
         public static void Main(string[] args)
         {
             try
             {
-                string route = @"C:\Users\julio\Downloads\inputlab2.csv";
+                //credencialesGeneradas = new List<Credencial>();
+                PrimeGenerator primeGen = new PrimeGenerator();
+                BigInteger p = primeGen.GeneratePrime();
+                BigInteger q = primeGen.GeneratePrime();
+
+                firmaGlobal = new FirmaDigital(p, q);
+
+                publicKey = firmaGlobal.GetPublicKey();
+                privateKey = firmaGlobal.GetPrivateKey();
+
+               
+                string route = @"C:\Users\julio\Downloads\LAB01-EDII\inputslab5\input.csv";
+                //string route = @"C:\Users\julio\Downloads\inputlab2.csv";
+                // Obtener la lista de credenciales
+
                 if (File.Exists(route))
                 {
                     string[] FileData = File.ReadAllLines(route);
@@ -60,11 +79,16 @@ namespace LAB01_EDII
                             }
                         }
                     }
-
+                    credencialesGeneradas = ObtenerCredenciales(arbolPersonas, publicKey);
+                    ImprimirCredenciales(credencialesGeneradas);
+                    Console.ReadKey();
+                    Login();
 
                     string flag;
                     do
                     {
+                        //Console.Clear();
+                        //Login();
                         Console.Clear();
                         Mostrardisplay();
                         Console.WriteLine("*********** Menú: *************");
@@ -115,13 +139,93 @@ namespace LAB01_EDII
 
                 }
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                Console.WriteLine("El sistema ha presentado un error inesperado");
+                Console.WriteLine($"El sistema ha presentado un error inesperado: {ex.Message}");
+                Console.WriteLine(ex.StackTrace);
             }
 
 
         }
+        public static void ImprimirCredenciales(List<Credencial> credenciales)
+        {
+            foreach (var cred in credenciales)
+            {
+                Console.WriteLine($"Reclutador: {cred.Recluiter}");
+                Console.WriteLine($"Compañía: {string.Join(", ", cred.Companies)}");
+                Console.WriteLine($"Contraseña: {cred.Password}");
+                Console.WriteLine("---------------------------------");
+            }
+        }
+
+        public static void Login()
+        {
+            bool accesoConcedido = false;
+            
+            do
+            {
+                
+                Console.Clear();
+                Mostrardisplay();
+
+                Console.WriteLine("***************************************");
+                Console.WriteLine("*                                     *");
+                Console.WriteLine("*           Ingreso al Sistema        *");
+                Console.WriteLine("*                                     *");
+                Console.WriteLine("***************************************");
+
+                Console.WriteLine("*                                     *");
+                Console.Write("*   Ingrese Reclutador: ");
+                string reclutador = Console.ReadLine();
+                Console.WriteLine("*                                     *");
+
+                Console.WriteLine("*                                     *");
+                Console.Write("*   Ingrese Compañía: ");
+                string compania = Console.ReadLine();
+                Console.WriteLine("*                                     *");
+
+                Console.WriteLine("*                                     *");
+                Console.Write("*   Ingrese Password: ");
+                string password = Console.ReadLine();
+                Console.WriteLine("*                                     *");
+
+                Console.WriteLine("***************************************");
+
+                if (ValidarCredenciales(reclutador, compania, password, credencialesGeneradas, privateKey))
+                {
+                    Console.WriteLine("Acceso concedido.");
+                    accesoConcedido = true;
+                }
+                else
+                {
+
+                    Console.WriteLine("Acceso denegado. ¿Desea intentar nuevamente? (S/N)");
+                    char opcion = Console.ReadKey().KeyChar;
+                    if (opcion == 'N' || opcion == 'n')
+                    {
+                        Environment.Exit(0); // Finaliza el programa si el usuario decide no intentar nuevamente
+                    }
+                }
+
+            } while (!accesoConcedido);
+        }
+
+
+        public static bool ValidarCredenciales(string reclutador, string compania, string passwordIngresado, List<Credencial> listaCredenciales, PrivateKey privateKey)
+        {
+            var credencialEncontrada = listaCredenciales.FirstOrDefault(cred => cred.Recluiter == reclutador && cred.Companies.Contains(compania));
+
+            if (credencialEncontrada != null)
+            {
+                string passwordDescifrado = DescifrarPassword(credencialEncontrada.PasswordCifrado, privateKey);
+                return passwordDescifrado == passwordIngresado;
+            }
+            else
+            {
+                return false;
+            }
+        }
+
 
         private static void Mostrardisplay()
         {
@@ -424,8 +528,9 @@ namespace LAB01_EDII
                 {
                     Console.WriteLine($"Leyendo y descifrando el archivo: {path}");
 
-                    byte[] byteArray = File.ReadAllBytes(path);
-                    List<int> compressedMessage = Enumerable.Range(0, byteArray.Length / sizeof(int)).Select(offset => BitConverter.ToInt32(byteArray, offset * sizeof(int))).ToList();
+                    byte[] byteArray = File.ReadAllBytes(path);//lo almaceno en un array de bytes
+                    //de arreglo de bytes a lista de enteros
+                    List<int> compressedMessage = Enumerable.Range(0, byteArray.Length / sizeof(int)).Select(offset => BitConverter.ToInt32(byteArray, offset * sizeof(int))).ToList(); //enumerable -> (()) secuencia de numeros enteros crea una secuencia de índices que representan las posiciones iniciales de cada entero en el arreglo de bytes
 
                     // Descomprimir el mensaje
                     string encryptedMessage = LZW.Decompress(compressedMessage);

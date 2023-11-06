@@ -72,6 +72,7 @@
     <Compile Include="Arbol\AVL.cs" />
     <Compile Include="Arbol\Huffmannode.cs" />
     <Compile Include="Modelo\CodificacionHuffman.cs" />
+    <Compile Include="Modelo\Credenciales.cs" />
     <Compile Include="Modelo\DES.cs" />
     <Compile Include="Modelo\FirmaDigital.cs" />
     <Compile Include="Modelo\Letra.cs" />
@@ -79,6 +80,7 @@
     <Compile Include="Modelo\Delegates.cs" />
     <Compile Include="Modelo\LZW.cs" />
     <Compile Include="Modelo\Persona.cs" />
+    <Compile Include="Modelo\PrimeGenerator.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
